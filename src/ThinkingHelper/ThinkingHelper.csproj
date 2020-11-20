@@ -2,13 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Authors>Thinking</Authors>
     <Company>Thinking</Company>
     <Product>Thinking</Product>
     <Description>自己平时积累的一些辅助方法</Description>
     <PackageTags>helper</PackageTags>
     <NeutralLanguage></NeutralLanguage>
+    <PackageProjectUrl>https://github.com/think-flow/ThinkingHelper</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/think-flow/ThinkingHelper</RepositoryUrl>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
