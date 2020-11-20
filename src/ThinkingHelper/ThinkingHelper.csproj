@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Thinking</Authors>
+    <Company>Thinking</Company>
+    <Product>Thinking</Product>
+    <Description>自己平时积累的一些辅助方法</Description>
+    <PackageTags>helper</PackageTags>
+    <NeutralLanguage></NeutralLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
+    <PackageReference Include="Nito.AsyncEx.Context" Version="5.1.0" />
+  </ItemGroup>
+</Project>
