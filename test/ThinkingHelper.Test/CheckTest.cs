@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace ThinkingHelper.Test
@@ -8,7 +10,13 @@ namespace ThinkingHelper.Test
         [Fact]
         public void NotNull_Null_ShouldThrowArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(()=>Check.NotNull<string>(null, "abc"));
+            Assert.Throws<ArgumentNullException>(() => Check.NotNull<string>(null, "abc"));
+        }
+
+        [Fact]
+        public void NotNull_EmptyArray_ShouldThrowArgumentException()
+        {
+            Assert.Throws<ArgumentException>(() => Check.NotNullOrEmpty(new int[0], "abc"));
         }
     }
 }
