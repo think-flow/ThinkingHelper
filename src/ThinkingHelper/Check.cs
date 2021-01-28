@@ -11,7 +11,7 @@ namespace ThinkingHelper
         [ContractAnnotation("value:null => halt")]
         public static T NotNull<T>(
             T value,
-            [InvokerParameterName] [NotNull] string parameterName)
+            [InvokerParameterName] string? parameterName)
         {
             if (value == null)
             {
@@ -24,7 +24,7 @@ namespace ThinkingHelper
         [ContractAnnotation("value:null => halt")]
         public static T NotNull<T>(
             T value,
-            [InvokerParameterName] [NotNull] string parameterName,
+            [InvokerParameterName] string? parameterName,
             string message)
         {
             if (value == null)
@@ -38,7 +38,7 @@ namespace ThinkingHelper
         [ContractAnnotation("value:null => halt")]
         public static string NotNullOrWhiteSpace(
             string value,
-            [InvokerParameterName] [NotNull] string parameterName)
+            [InvokerParameterName] string? parameterName)
         {
             if (value.IsNullOrWhiteSpace())
             {
@@ -51,7 +51,7 @@ namespace ThinkingHelper
         [ContractAnnotation("value:null => halt")]
         public static string NotNullOrEmpty(
             string value,
-            [InvokerParameterName] [NotNull] string parameterName)
+            [InvokerParameterName] string? parameterName)
         {
             if (value.IsNullOrEmpty())
             {
@@ -63,7 +63,7 @@ namespace ThinkingHelper
 
         [ContractAnnotation("value:null => halt")]
         public static ICollection<T> NotNullOrEmpty<T>(ICollection<T> value,
-            [InvokerParameterName] [NotNull] string parameterName)
+            [InvokerParameterName] string? parameterName)
         {
             if (value.IsNullOrEmpty())
             {

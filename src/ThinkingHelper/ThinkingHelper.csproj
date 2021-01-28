@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <Authors>Thinking</Authors>
     <Company>Thinking</Company>
@@ -12,6 +12,7 @@
     <PackageProjectUrl>https://github.com/think-flow/ThinkingHelper</PackageProjectUrl>
     <RepositoryUrl>https://github.com/think-flow/ThinkingHelper</RepositoryUrl>
     <Version>1.0.1</Version>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

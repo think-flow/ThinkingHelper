@@ -16,7 +16,7 @@ namespace ThinkingHelper.Test
         [Fact]
         public void NotNull_EmptyArray_ShouldThrowArgumentException()
         {
-            Assert.Throws<ArgumentException>(() => Check.NotNullOrEmpty(new int[0], "abc"));
+            Assert.Throws<ArgumentException>(() => Check.NotNullOrEmpty(Array.Empty<int>(), "abc"));
         }
     }
 }

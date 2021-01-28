@@ -37,7 +37,7 @@ namespace ThinkingHelper.Validation
         /// </summary>
         public object[] ExpectedValues { get; set; }
 
-        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
             foreach (var expectedValue in ExpectedValues)
             {
@@ -48,7 +48,7 @@ namespace ThinkingHelper.Validation
             }
 
             return new ValidationResult($"参数{validationContext.MemberName}的值必须为[{string.Join(" 或 ", ExpectedValues)}]",
-                new[] {validationContext.MemberName});
+                new[] { validationContext.MemberName ?? string.Empty });
         }
     }
 }
