@@ -9,9 +9,8 @@ namespace ThinkingHelper
     public static class Check
     {
         [ContractAnnotation("value:null => halt")]
-        public static T NotNull<T>(
-            T value,
-            [InvokerParameterName] string? parameterName)
+        public static T NotNull<T>(T value, [InvokerParameterName] string? parameterName)
+            where T : notnull
         {
             if (value == null)
             {
@@ -22,10 +21,8 @@ namespace ThinkingHelper
         }
 
         [ContractAnnotation("value:null => halt")]
-        public static T NotNull<T>(
-            T value,
-            [InvokerParameterName] string? parameterName,
-            string message)
+        public static T NotNull<T>(T value, [InvokerParameterName] string? parameterName, string? message)
+            where T : notnull
         {
             if (value == null)
             {
@@ -36,9 +33,7 @@ namespace ThinkingHelper
         }
 
         [ContractAnnotation("value:null => halt")]
-        public static string NotNullOrWhiteSpace(
-            string value,
-            [InvokerParameterName] string? parameterName)
+        public static string NotNullOrWhiteSpace(string value, [InvokerParameterName] string? parameterName)
         {
             if (value.IsNullOrWhiteSpace())
             {
@@ -49,9 +44,7 @@ namespace ThinkingHelper
         }
 
         [ContractAnnotation("value:null => halt")]
-        public static string NotNullOrEmpty(
-            string value,
-            [InvokerParameterName] string? parameterName)
+        public static string NotNullOrEmpty(string value, [InvokerParameterName] string? parameterName)
         {
             if (value.IsNullOrEmpty())
             {
@@ -62,8 +55,7 @@ namespace ThinkingHelper
         }
 
         [ContractAnnotation("value:null => halt")]
-        public static ICollection<T> NotNullOrEmpty<T>(ICollection<T> value,
-            [InvokerParameterName] string? parameterName)
+        public static ICollection<T> NotNullOrEmpty<T>(ICollection<T> value, [InvokerParameterName] string? parameterName)
         {
             if (value.IsNullOrEmpty())
             {

@@ -25,7 +25,6 @@ namespace ThinkingHelper.Collections.Generic
     }
 
     internal class DictionaryDebugView<TKey, TValue>
-        where TKey : notnull
     {
         private readonly IDictionary<TKey, TValue> _dic;
 

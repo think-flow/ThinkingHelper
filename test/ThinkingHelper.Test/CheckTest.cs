@@ -10,7 +10,7 @@ namespace ThinkingHelper.Test
         [Fact]
         public void NotNull_Null_ShouldThrowArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => Check.NotNull<string>(null, "abc"));
+            Assert.Throws<ArgumentNullException>(() => Check.NotNull<string>(null!, "abc"));
         }
 
         [Fact]

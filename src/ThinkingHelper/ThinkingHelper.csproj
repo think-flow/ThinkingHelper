@@ -12,11 +12,14 @@
     <PackageProjectUrl>https://github.com/think-flow/ThinkingHelper</PackageProjectUrl>
     <RepositoryUrl>https://github.com/think-flow/ThinkingHelper</RepositoryUrl>
     <Version>1.0.1</Version>
-    <Nullable>enable</Nullable>
+    <NullAble>enable</NullAble>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
-    <PackageReference Include="Nito.AsyncEx.Context" Version="5.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Threading\" />
   </ItemGroup>
 </Project>
