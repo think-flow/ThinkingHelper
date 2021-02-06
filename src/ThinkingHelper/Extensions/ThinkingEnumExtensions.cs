@@ -4,6 +4,8 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using ThinkingHelper;
 
+// ReSharper disable CheckNamespace
+
 namespace System
 {
     public static class ThinkingEnumExtensions
