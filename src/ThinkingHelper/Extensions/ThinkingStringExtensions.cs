@@ -26,12 +26,15 @@ namespace System
         /// <summary>
         /// 将字符串中的${[ParaName]}用字典中对应Key的Value进行替换
         /// $$将转义为$
+        /// <param name="args">参数字典</param>
+        /// <param name="ignoreCase">是否忽略参数大小写</param>
         /// </summary>
-        public static string Format(this string format, IDictionary<string, string> args)
+        public static string Format(this string format, IDictionary<string, string> args, bool ignoreCase = false)
         {
             Check.NotNull(format, nameof(format));
             Check.NotNull(args, nameof(args));
             if (format.Length == 0) return format;
+            if (ignoreCase) args = new Dictionary<string, string>(args, StringComparer.OrdinalIgnoreCase);
 
             //$$ 转义为$
             var builder = new StringBuilder(format.Length + format.Length / 3);
