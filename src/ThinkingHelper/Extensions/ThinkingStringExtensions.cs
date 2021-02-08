@@ -76,7 +76,12 @@ namespace System
                         if (c == '}')
                         {
                             state = 1;
-                            string? paraName = format[startIndex..(endIndex + 1)];
+                            int index = endIndex - startIndex;
+                            if (index < 0)
+                            {
+                                throw new FormatException($"Ch:{startIndex} 空参数定义！");
+                            }
+                            string paraName = format.Substring(startIndex, index + 1);
                             if (!args.TryGetValue(paraName, out string? value))
                             {
                                 throw new FormatException($"未找到参数{paraName}的值");
