@@ -40,7 +40,9 @@ namespace System
             var builder = new StringBuilder(format.Length + format.Length / 3);
             int startIndex = 0; //变量名开始下标
             int endIndex = 0; //变量名结束下标
-            int state = 1; // 1 普通字符  2 $ 可能是变量)  3 { 变量开始  4 } 变量结束 
+            int state = 1; // 1 普通字符  2 $ 可能是变量)  3 { 变量开始  4 } 变量结束
+            bool isSet = false;
+
             for (var i = 0; i < format.Length; i++)
             {
                 char c = format[i];
@@ -52,7 +54,6 @@ namespace System
                             state = 2;
                             continue;
                         }
-
                         builder.Append(c);
                         continue;
                     case 2:
@@ -63,18 +64,17 @@ namespace System
                             builder.Append('$');
                             continue;
                         }
-
                         if (c == '{')
                         {
                             state = 3;
                             startIndex = i + 1;
                             continue;
                         }
-
                         throw new FormatException($"Ch:{i} 无效的占位符定义！$后必须为$，或者{{");
                     case 3:
                         if (c == '}')
                         {
+                            isSet = true;
                             state = 1;
                             int index = endIndex - startIndex;
                             if (index < 0)
@@ -86,11 +86,9 @@ namespace System
                             {
                                 throw new FormatException($"未找到参数{paraName}的值");
                             }
-
                             builder.Append(value);
                             continue;
                         }
-
                         endIndex = i;
                         continue;
                     default:
@@ -102,7 +100,7 @@ namespace System
             {
                 2 => throw new FormatException($"Ch:{format.Length} 无效的占位符定义！$后必须为$，或者{{"),
                 3 => throw new FormatException($"Ch:{startIndex} 占位符定义未闭合"),
-                _ => builder.ToString()
+                _ => isSet ? builder.ToString() : format
             };
         }
     }

@@ -30,5 +30,17 @@ namespace ThinkingHelper.Test.Extensions
             str = "123123${123";
             Assert.Throws<FormatException>(() => str.Format(paras));
         }
+
+        [Fact]
+        public void Format_Str_ShouldReferenceEqual()
+        {
+            Dictionary<string, string> paras = new Dictionary<string, string>
+            {
+                {"A", "qwe"}, {"B", "qwe kjlj"}
+            };
+            string str = "12adfkljajsdfl12";
+            string actual = str.Format(paras);
+            Assert.True(object.ReferenceEquals(str, actual));
+        }
     }
 }
