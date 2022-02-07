@@ -1,25 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net5</TargetFramework>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Authors>Thinking</Authors>
-    <Company>Thinking</Company>
-    <Product>Thinking</Product>
-    <Description>自己平时积累的一些辅助方法</Description>
-    <PackageTags>helper</PackageTags>
-    <NeutralLanguage></NeutralLanguage>
-    <PackageProjectUrl>https://github.com/think-flow/ThinkingHelper</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/think-flow/ThinkingHelper</RepositoryUrl>
-    <Version>1.0.1</Version>
-    <NullAble>enable</NullAble>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Threading\" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <Authors>Thinking</Authors>
+        <Company>Thinking</Company>
+        <Product>Thinking</Product>
+        <Description>自己平时积累的一些辅助方法</Description>
+        <PackageTags>helper</PackageTags>
+        <NeutralLanguage></NeutralLanguage>
+        <PackageProjectUrl>https://github.com/think-flow/ThinkingHelper</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/think-flow/ThinkingHelper</RepositoryUrl>
+        <Version>1.0.1</Version>
+        <NullAble>enable</NullAble>
+    </PropertyGroup>
 </Project>
