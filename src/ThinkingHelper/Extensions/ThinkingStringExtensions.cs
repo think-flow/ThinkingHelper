@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using ThinkingHelper;
 
@@ -28,16 +29,16 @@ public static class ThinkingStringExtensions
     /// </summary>
     public static string Format(this string format, IDictionary<string, string> args, bool ignoreCase = false)
     {
-        Check.NotNull(format, nameof(format));
-        Check.NotNull(args, nameof(args));
-        if (format.Length == 0) return format;
+        Check.NotNull(format);
+        Check.NotNull(args);
+        if (format.Length < 1) return format;
         if (ignoreCase) args = new Dictionary<string, string>(args, StringComparer.OrdinalIgnoreCase);
 
         //$$ 转义为$
         var builder = new StringBuilder(format.Length + format.Length / 3);
         var startIndex = 0; //变量名开始下标
         var endIndex = 0; //变量名结束下标
-        var state = 1; // 1 普通字符  2 $ 可能是变量)  3 { 变量开始  4 } 变量结束
+        var state = 0; //0 初始状态 1 普通字符  2 $ 变量标签  3 { 变量开始  4 } 变量结束
         var isSet = false;
 
         for (var i = 0; i < format.Length; i++)
@@ -45,6 +46,7 @@ public static class ThinkingStringExtensions
             char c = format[i];
             switch (state)
             {
+                case 0:
                 case 1:
                     if (c == '$')
                     {
@@ -70,7 +72,7 @@ public static class ThinkingStringExtensions
                         continue;
                     }
 
-                    throw new FormatException($"Ch:{i} 无效的占位符定义！$后必须为$，或者{{");
+                    throw new FormatException(GetIvalidPlaceholderMessage(i));
                 case 3:
                     if (c == '}')
                     {
@@ -79,13 +81,13 @@ public static class ThinkingStringExtensions
                         int index = endIndex - startIndex;
                         if (index < 0)
                         {
-                            throw new FormatException($"Ch:{startIndex} 空参数定义！");
+                            throw new FormatException($"Empty name of parameter! index:{startIndex}");
                         }
 
                         string paraName = format.Substring(startIndex, index + 1);
                         if (!args.TryGetValue(paraName, out string? value))
                         {
-                            throw new FormatException($"未找到参数{paraName}的值");
+                            throw new FormatException($"Value of parameter \"{paraName}\" not found! index:{startIndex}");
                         }
 
                         builder.Append(value);
@@ -95,15 +97,18 @@ public static class ThinkingStringExtensions
                     endIndex = i;
                     continue;
                 default:
-                    throw new Exception("未知状态");
+                    throw new Exception("Unknown State! Please contact the owner!");
             }
         }
 
         return state switch
         {
-            2 => throw new FormatException($"Ch:{format.Length} 无效的占位符定义！$后必须为$，或者{{"),
-            3 => throw new FormatException($"Ch:{startIndex} 占位符定义未闭合"),
+            2 => throw new FormatException(GetIvalidPlaceholderMessage(format.Length)),
+            3 => throw new FormatException($"Placeholder not closed! index:{startIndex}"),
             _ => isSet ? builder.ToString() : format
         };
+
+        static string GetIvalidPlaceholderMessage(int index)
+            => $"Invalid placeholder! character $ must be followed by $, or{{ index:{index}";
     }
 }

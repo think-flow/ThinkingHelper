@@ -13,9 +13,9 @@ public class ThinkingStringExtensionsTest
         {
             {"A", "qwe"}, {"B", "qwe kjlj"}
         };
-        var str = "${A}abdf${B}{${A}$$}$${qwe";
+        var str = "${A}abdf$$${B}{${A}$$}$${qwe";
         string actual = str.Format(paras);
-        Assert.Equal("qweabdfqwe kjlj{qwe$}${qwe", actual);
+        Assert.Equal("qweabdf$qwe kjlj{qwe$}${qwe", actual);
     }
 
     [Fact]
@@ -28,6 +28,8 @@ public class ThinkingStringExtensionsTest
         var str = "12$12";
         Assert.Throws<FormatException>(() => str.Format(paras));
         str = "123123${123";
+        Assert.Throws<FormatException>(() => str.Format(paras));
+        str = "qwe${}dddd";
         Assert.Throws<FormatException>(() => str.Format(paras));
     }
 

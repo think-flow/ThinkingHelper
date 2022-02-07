@@ -9,7 +9,7 @@ internal sealed class CollectionDebugView<T>
 
     public CollectionDebugView(ICollection<T> collection)
     {
-        _collection = Check.NotNull(collection, nameof(collection));
+        _collection = Check.NotNull(collection);
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
@@ -30,7 +30,7 @@ internal sealed class DictionaryDebugView<TKey, TValue>
 
     public DictionaryDebugView(IDictionary<TKey, TValue> dic)
     {
-        _dic = Check.NotNull(dic, nameof(dic));
+        _dic = Check.NotNull(dic);
     }
 
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]

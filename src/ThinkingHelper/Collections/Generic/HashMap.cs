@@ -27,7 +27,7 @@ public class HashMap<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>, IDiction
 
     public HashMap(IDictionary<TKey, TValue> dictionary, [AllowNull] TValue defaultValue)
     {
-        Check.NotNull(dictionary, nameof(dictionary));
+        Check.NotNull(dictionary);
         Dictionary = new ReadOnlyDictionary<TKey, TValue>(dictionary);
         _defaultValue = defaultValue;
     }

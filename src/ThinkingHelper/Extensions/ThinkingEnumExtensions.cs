@@ -34,7 +34,7 @@ public static class ThinkingEnumExtensions
     public static TEnum ToEnum<TEnum>(this string value, bool ignoreCase)
         where TEnum : struct
     {
-        Check.NotNull(value, nameof(value));
+        Check.NotNull(value);
         return Enum.Parse<TEnum>(value, ignoreCase);
     }
 
@@ -84,7 +84,7 @@ public static class ThinkingEnumExtensions
     /// <returns>如果DescriptionAttribute不存在或Description为null则返回null</returns>
     public static string? GetDescription(this Enum value)
     {
-        Check.NotNull(value, nameof(value));
+        Check.NotNull(value);
         var memberInfo = value.GetType().GetMember(value.ToString(),
             MemberTypes.Field, BindingFlags.Public | BindingFlags.Static).FirstOrDefault();
         return memberInfo?.GetCustomAttribute<DescriptionAttribute>()?.Description;
@@ -98,7 +98,7 @@ public static class ThinkingEnumExtensions
         IsEnum(typeof(TEnum));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsEnum(Type type) => Check.NotNull(type, nameof(type)).IsEnum;
+    private static bool IsEnum(Type type) => Check.NotNull(type).IsEnum;
 
     #endregion
 }

@@ -15,8 +15,8 @@ public class ValueInAttribute : ValidationAttribute
     /// <param name="expectedValues">期望参数</param>
     public ValueInAttribute(Type parameterType, params object[] expectedValues)
     {
-        Check.NotNull(parameterType, nameof(parameterType));
-        Check.NotNullOrEmpty(expectedValues, nameof(expectedValues));
+        Check.NotNull(parameterType);
+        Check.NotNullOrEmpty(expectedValues);
         if (expectedValues.Select(e => e.GetType()).Any(type => type != parameterType))
         {
             throw new ArgumentException($"{nameof(expectedValues)}中的元素类型应与{nameof(parameterType)}所指定的类型一致");
