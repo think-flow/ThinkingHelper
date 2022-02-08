@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using ThinkingHelper;
+using ThinkingHelper.Reflection.Extensions;
 
 // ReSharper disable CheckNamespace
 namespace System;
@@ -29,7 +29,7 @@ public static class ThinkingStringExtensions
     /// <exception cref="FormatException">The format is invalid. -or- The value of the args is not found.</exception>
     /// <remarks>$$ will be escaped as $</remarks>
     /// <returns>A copy of format in which any format items are replaced.</returns>
-    public static string Format(this string format, IDictionary<string, string?> args)
+    public static string Format<TValue>(this string format, IDictionary<string, TValue> args)
     {
         Check.NotNull(format);
         Check.NotNull(args);
@@ -85,7 +85,7 @@ public static class ThinkingStringExtensions
                         }
 
                         string paraName = format.Substring(startIndex, index + 1);
-                        if (!args.TryGetValue(paraName, out string? value))
+                        if (!args.TryGetValue(paraName, out TValue? value))
                         {
                             throw new FormatException($"The Value of parameter \"{paraName}\" not found! index:{startIndex}");
                         }
@@ -121,7 +121,6 @@ public static class ThinkingStringExtensions
     public static string Format(this string format, object args)
     {
         Check.NotNull(args);
-        var argsDictionary = args.GetType().GetProperties().ToDictionary(info => info.Name, info => info.GetValue(args)?.ToString());
-        return Format(format, argsDictionary);
+        return Format(format, args.ToDictionary());
     }
 }

@@ -9,7 +9,7 @@ public class ThinkingStringExtensionsTest
     [Fact]
     public void Format_Str_ShouldNotThrowException()
     {
-        var paras = new Dictionary<string, string?>
+        var paras = new Dictionary<string, string>
         {
             {"A", "qwe"}, {"B", "qwe kjlj"}
         };
@@ -21,7 +21,7 @@ public class ThinkingStringExtensionsTest
     [Fact]
     public void Format_Str_ShouldThrowException()
     {
-        var paras = new Dictionary<string, string?>
+        var paras = new Dictionary<string, string>
         {
             {"A", "qwe"}, {"B", "qwe kjlj"}
         };
@@ -38,7 +38,7 @@ public class ThinkingStringExtensionsTest
     {
         var paras = new Dictionary<string, string?>
         {
-            {"A", "qwe"}, {"B", "qwe kjlj"}
+            {"A", "qwe"}, {"B", null}
         };
         string str = "12adfkljajsdfl12";
         string actual = str.Format(paras);
