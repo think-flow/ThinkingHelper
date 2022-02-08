@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text;
 using ThinkingHelper;
 
 // ReSharper disable CheckNamespace
-
 namespace System;
 
 [DebuggerStepThrough]
@@ -17,31 +16,32 @@ public static class ThinkingStringExtensions
     public static bool IsNullOrEmpty(this string? str) => string.IsNullOrEmpty(str);
 
     /// <summary>
-    /// indicates whether this string is null, empty, or consists only of white-space characters.
+    /// Indicates whether this string is null, empty, or consists only of white-space characters.
     /// </summary>
     public static bool IsNullOrWhiteSpace(this string? str) => string.IsNullOrWhiteSpace(str);
 
     /// <summary>
-    /// 将字符串中的${[ParaName]}用字典中对应Key的Value进行替换
-    /// $$将转义为$
-    /// <param name="args">参数字典</param>
-    /// <param name="ignoreCase">是否忽略参数大小写</param>
+    /// Replaces one or more ${[ParameterName]} format items in a string with values in the argument dictionary.
     /// </summary>
-    public static string Format(this string format, IDictionary<string, string> args, bool ignoreCase = false)
+    /// <param name="format">A composite format string.</param>
+    /// <param name="args">argument dictionary</param>
+    /// <exception cref="ArgumentNullException">format or args are null</exception>
+    /// <exception cref="FormatException">The format is invalid. -or- The value of the args is not found.</exception>
+    /// <remarks>$$ will be escaped as $</remarks>
+    /// <returns>A copy of format in which any format items are replaced.</returns>
+    public static string Format(this string format, IDictionary<string, string?> args)
     {
         Check.NotNull(format);
         Check.NotNull(args);
         if (format.Length < 1) return format;
-        if (ignoreCase) args = new Dictionary<string, string>(args, StringComparer.OrdinalIgnoreCase);
 
-        //$$ 转义为$
         var builder = new StringBuilder(format.Length + format.Length / 3);
-        var startIndex = 0; //变量名开始下标
-        var endIndex = 0; //变量名结束下标
-        var state = 0; //0 初始状态 1 普通字符  2 $ 变量标签  3 { 变量开始  4 } 变量结束
-        var isSet = false;
+        int startIndex = 0; //变量名开始下标
+        int endIndex = 0; //变量名结束下标
+        int state = 0; //0 初始状态 1 普通字符  2 $ 变量标签  3 { 变量开始  4 } 变量结束
+        bool isSet = false;
 
-        for (var i = 0; i < format.Length; i++)
+        for (int i = 0; i < format.Length; i++)
         {
             char c = format[i];
             switch (state)
@@ -72,7 +72,7 @@ public static class ThinkingStringExtensions
                         continue;
                     }
 
-                    throw new FormatException(GetIvalidPlaceholderMessage(i));
+                    throw new FormatException($"Invalid placeholder! character $ must be followed by $, or{{ index:{i}");
                 case 3:
                     if (c == '}')
                     {
@@ -87,7 +87,7 @@ public static class ThinkingStringExtensions
                         string paraName = format.Substring(startIndex, index + 1);
                         if (!args.TryGetValue(paraName, out string? value))
                         {
-                            throw new FormatException($"Value of parameter \"{paraName}\" not found! index:{startIndex}");
+                            throw new FormatException($"The Value of parameter \"{paraName}\" not found! index:{startIndex}");
                         }
 
                         builder.Append(value);
@@ -103,12 +103,25 @@ public static class ThinkingStringExtensions
 
         return state switch
         {
-            2 => throw new FormatException(GetIvalidPlaceholderMessage(format.Length)),
+            2 => throw new FormatException($"Invalid placeholder! character $ must be followed by $, or{{ index:{format.Length}"),
             3 => throw new FormatException($"Placeholder not closed! index:{startIndex}"),
             _ => isSet ? builder.ToString() : format
         };
+    }
 
-        static string GetIvalidPlaceholderMessage(int index)
-            => $"Invalid placeholder! character $ must be followed by $, or{{ index:{index}";
+    /// <summary>
+    /// Replaces one or more ${[ParameterName]} format items in a string with values in the argument object.
+    /// </summary>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="args">argument object</param>
+    /// <exception cref="ArgumentNullException">format or args are null</exception>
+    /// <exception cref="FormatException">The format is invalid. -or- The value of the args is not found.</exception>
+    /// <remarks>$$ will be escaped as $</remarks>
+    /// <returns>A copy of format in which any format items are replaced.</returns>
+    public static string Format(this string format, object args)
+    {
+        Check.NotNull(args);
+        var argsDictionary = args.GetType().GetProperties().ToDictionary(info => info.Name, info => info.GetValue(args)?.ToString());
+        return Format(format, argsDictionary);
     }
 }

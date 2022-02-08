@@ -16,7 +16,7 @@ public class ThinkingEnumExtensionsTest
     [Fact]
     public void ToEnum_Str_ShouldNotThrowException()
     {
-        var str = "Add";
+        string str = "Add";
         var te = str.ToEnum<TestEnum>();
         Assert.Equal(TestEnum.Add, te);
     }
@@ -24,14 +24,14 @@ public class ThinkingEnumExtensionsTest
     [Fact]
     public void ToEnum_Str_ShouldThrowException()
     {
-        var str = "ABC";
+        string str = "ABC";
         Assert.Throws<ArgumentException>(() => str.ToEnum<TestEnum>());
     }
 
     [Fact]
     public void ToEnum_Int_ShouldNotThrowException()
     {
-        var value = 45;
+        int value = 45;
         var te = value.ToEnum<TestEnum>();
         Assert.Equal(TestEnum.Insert, te);
     }
@@ -39,7 +39,7 @@ public class ThinkingEnumExtensionsTest
     [Fact]
     public void ToEnum_Int_ShouldThrowException()
     {
-        var value = 777;
+        int value = 777;
         Assert.Throws<ArgumentException>(() => value.ToEnum<TestEnum>(true));
     }
 

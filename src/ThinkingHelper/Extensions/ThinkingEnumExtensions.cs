@@ -61,7 +61,7 @@ public static class ThinkingEnumExtensions
     public static TEnum ToEnum<TEnum>(this int value, bool checkDefined)
         where TEnum : struct
     {
-        var enumType = typeof(TEnum);
+        Type enumType = typeof(TEnum);
 
         if (!IsEnum(enumType))
         {
@@ -85,7 +85,7 @@ public static class ThinkingEnumExtensions
     public static string? GetDescription(this Enum value)
     {
         Check.NotNull(value);
-        var memberInfo = value.GetType().GetMember(value.ToString(),
+        MemberInfo? memberInfo = value.GetType().GetMember(value.ToString(),
             MemberTypes.Field, BindingFlags.Public | BindingFlags.Static).FirstOrDefault();
         return memberInfo?.GetCustomAttribute<DescriptionAttribute>()?.Description;
     }

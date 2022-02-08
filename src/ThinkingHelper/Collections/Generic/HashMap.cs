@@ -58,7 +58,7 @@ public class HashMap<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>, IDiction
     {
         get
         {
-            TryGetValue(key, out var value);
+            TryGetValue(key, out TValue value);
             return value;
         }
     }
