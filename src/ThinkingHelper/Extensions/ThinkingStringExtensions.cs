@@ -29,7 +29,7 @@ public static class ThinkingStringExtensions
     /// <exception cref="FormatException">The format is invalid. -or- The value of the args is not found.</exception>
     /// <remarks>$$ will be escaped as $</remarks>
     /// <returns>A copy of format in which any format items are replaced.</returns>
-    public static string Format<TValue>(this string format, IDictionary<string, TValue> args)
+    public static string Format(this string format, IDictionary<string, string?> args)
     {
         Check.NotNull(format);
         Check.NotNull(args);
@@ -85,9 +85,9 @@ public static class ThinkingStringExtensions
                         }
 
                         string paraName = format.Substring(startIndex, index + 1);
-                        if (!args.TryGetValue(paraName, out TValue? value))
+                        if (!args.TryGetValue(paraName, out string? value))
                         {
-                            throw new FormatException($"The Value of parameter \"{paraName}\" not found! index:{startIndex}");
+                            throw new FormatException($"The parameter \"{paraName}\" is not found in the argument dictionary! index:{startIndex}");
                         }
 
                         builder.Append(value);
@@ -97,7 +97,7 @@ public static class ThinkingStringExtensions
                     endIndex = i;
                     continue;
                 default:
-                    throw new Exception("Unknown State! Please contact the owner!");
+                    throw new Exception("Unknown State! Please contact the lib owner!");
             }
         }
 
@@ -121,6 +121,6 @@ public static class ThinkingStringExtensions
     public static string Format(this string format, object args)
     {
         Check.NotNull(args);
-        return Format(format, args.ToDictionary());
+        return Format(format, args.ToDictionary(info => info.GetValue(args)?.ToString()));
     }
 }

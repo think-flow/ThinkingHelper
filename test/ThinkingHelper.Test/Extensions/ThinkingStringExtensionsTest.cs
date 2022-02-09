@@ -9,7 +9,7 @@ public class ThinkingStringExtensionsTest
     [Fact]
     public void Format_Str_ShouldNotThrowException()
     {
-        var paras = new Dictionary<string, string>
+        var paras = new Dictionary<string, string?>
         {
             {"A", "qwe"}, {"B", "qwe kjlj"}
         };
@@ -21,7 +21,7 @@ public class ThinkingStringExtensionsTest
     [Fact]
     public void Format_Str_ShouldThrowException()
     {
-        var paras = new Dictionary<string, string>
+        var paras = new Dictionary<string, string?>
         {
             {"A", "qwe"}, {"B", "qwe kjlj"}
         };
@@ -50,10 +50,10 @@ public class ThinkingStringExtensionsTest
     {
         var paras = new
         {
-            A = "qwe", B = "qwe kjlj"
+            A = "qwe", B = "qwe kjlj",Time="2022-2-9 13:58:32"
         };
-        string str = "${A}abdf$$${B}{${A}$$}$${qwe";
+        string str = "${A}abdf$$${B}{${A}$$}$${qwe ${Time}";
         string actual = str.Format(paras);
-        Assert.Equal("qweabdf$qwe kjlj{qwe$}${qwe", actual);
+        Assert.Equal("qweabdf$qwe kjlj{qwe$}${qwe 2022-2-9 13:58:32", actual);
     }
 }
