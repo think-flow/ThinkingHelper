@@ -19,8 +19,8 @@ public static class ThinkingEnumExtensions
     /// <exception cref="ArgumentException">value does not contain enumeration information.</exception>
     /// <returns></returns>
     public static TEnum ToEnum<TEnum>(this string value)
-        where TEnum : struct
-        => value.ToEnum<TEnum>(false);
+        where TEnum : struct, Enum =>
+        value.ToEnum<TEnum>(false);
 
     /// <summary>
     /// 将<see cref="string" />转为<see cref="Enum" />类型
@@ -32,7 +32,7 @@ public static class ThinkingEnumExtensions
     /// <exception cref="ArgumentException">value does not contain enumeration information.</exception>
     /// <returns></returns>
     public static TEnum ToEnum<TEnum>(this string value, bool ignoreCase)
-        where TEnum : struct
+        where TEnum : struct, Enum
     {
         Check.NotNull(value);
         return Enum.Parse<TEnum>(value, ignoreCase);
@@ -46,7 +46,7 @@ public static class ThinkingEnumExtensions
     /// <exception cref="ArgumentException">TEnum is not an System.Enum type.</exception>
     /// <returns></returns>
     public static TEnum ToEnum<TEnum>(this int value)
-        where TEnum : struct =>
+        where TEnum : struct, Enum =>
         value.ToEnum<TEnum>(false);
 
     /// <summary>
@@ -59,14 +59,9 @@ public static class ThinkingEnumExtensions
     /// <exception cref="ArgumentException">value does not contain enumeration information.</exception>
     /// <returns></returns>
     public static TEnum ToEnum<TEnum>(this int value, bool checkDefined)
-        where TEnum : struct
+        where TEnum : struct, Enum
     {
         Type enumType = typeof(TEnum);
-
-        if (!IsEnum(enumType))
-        {
-            throw new ArgumentException("TEnum is not an System.Enum type.");
-        }
 
         if (checkDefined && !Enum.IsDefined(enumType, value))
         {
@@ -89,16 +84,4 @@ public static class ThinkingEnumExtensions
             MemberTypes.Field, BindingFlags.Public | BindingFlags.Static).FirstOrDefault();
         return memberInfo?.GetCustomAttribute<DescriptionAttribute>()?.Description;
     }
-
-    #region Private
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsEnum<TEnum>(TEnum value)
-        where TEnum : struct =>
-        IsEnum(typeof(TEnum));
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsEnum(Type type) => Check.NotNull(type).IsEnum;
-
-    #endregion
 }

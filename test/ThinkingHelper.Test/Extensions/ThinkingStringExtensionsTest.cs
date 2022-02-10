@@ -50,7 +50,7 @@ public class ThinkingStringExtensionsTest
     {
         var paras = new
         {
-            A = "qwe", B = "qwe kjlj",Time="2022-2-9 13:58:32"
+            A = "qwe", B = "qwe kjlj", Time = "2022-2-9 13:58:32"
         };
         string str = "${A}abdf$$${B}{${A}$$}$${qwe ${Time}";
         string actual = str.Format(paras);
