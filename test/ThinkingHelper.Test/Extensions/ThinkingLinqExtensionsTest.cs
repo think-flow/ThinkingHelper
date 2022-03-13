@@ -21,7 +21,9 @@ public class ThinkingLinqExtensionsTest
     {
         string str = "AbC";
         List<char> charList = new List<char>();
-        List<char> charList2 = str.Effect(i => charList.Add(i)).ToList();
+        var enumerable = str.Effect(i => charList.Add(i));
+        Assert.Empty(charList);
+        List<char> charList2 = enumerable.ToList();
         Assert.Equal(3, charList.Count);
         Assert.Equal('b', charList[1]);
         Assert.Equal(3, charList2.Count);
