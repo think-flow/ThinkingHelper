@@ -9,11 +9,11 @@ public class ThinkingStringExtensionsTest
     [Fact]
     public void Format_Str_ShouldNotThrowException()
     {
-        var paras = new Dictionary<string, string?>
+        var paras = new Dictionary<string, object?>
         {
-            {"A", "qwe"}, {"B", "qwe kjlj"}
+            {"A", "qwe"}, {"B", "qwe kjlj"},{"C", null}
         };
-        string str = "${A}abdf$$${B}{${A}$$}$${qwe";
+        string str = "${A}abdf$$${B}{${A}$$}$${qwe${C}";
         string actual = str.Format(paras);
         Assert.Equal("qweabdf$qwe kjlj{qwe$}${qwe", actual);
     }
@@ -30,6 +30,8 @@ public class ThinkingStringExtensionsTest
         str = "123123${123";
         Assert.Throws<FormatException>(() => str.Format(paras));
         str = "qwe${}dddd";
+        Assert.Throws<FormatException>(() => str.Format(paras));
+        str = "qwe${UserName}dddd";
         Assert.Throws<FormatException>(() => str.Format(paras));
     }
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using ThinkingHelper;
@@ -30,7 +31,7 @@ public static class ThinkingStringExtensions
     /// <exception cref="FormatException">The format is invalid. -or- The value of the args is not found.</exception>
     /// <remarks>$$ will be escaped as $</remarks>
     /// <returns>A copy of format in which any format items are replaced.</returns>
-    public static string Format(this string format, IDictionary<string, string?> args)
+    public static string Format(this string format, IDictionary args)
     {
         Check.NotNull(format);
         Check.NotNull(args);
@@ -86,12 +87,12 @@ public static class ThinkingStringExtensions
                         }
 
                         string paraName = format.Substring(startIndex, index + 1);
-                        if (!args.TryGetValue(paraName, out string? value))
+                        if (!args.Contains(paraName))
                         {
                             throw new FormatException($"The parameter \"{paraName}\" is not found in the argument dictionary! index:{startIndex}");
                         }
 
-                        builder.Append(value);
+                        builder.Append(args[paraName]);
                         continue;
                     }
 
@@ -122,6 +123,25 @@ public static class ThinkingStringExtensions
     public static string Format(this string format, object args)
     {
         Check.NotNull(args);
+        if (args is IDictionary dicArgs)
+        {
+            return Format(format, dicArgs);
+        }
         return Format(format, args.ToDictionary(info => info.GetValue(args)?.ToString()));
+    }
+
+    /// <summary>
+    /// Replaces one or more ${[ParameterName]} format items in a string with values in the argument dictionary.
+    /// </summary>
+    /// <param name="format">A composite format string.</param>
+    /// <param name="args">argument dictionary</param>
+    /// <exception cref="ArgumentNullException">format or args are null</exception>
+    /// <exception cref="FormatException">The format is invalid. -or- The value of the args is not found.</exception>
+    /// <remarks>$$ will be escaped as $</remarks>
+    /// <returns>A copy of format in which any format items are replaced.</returns>
+    public static string Format(this string format, Dictionary<string, string?> args)
+    {
+        Check.NotNull(args);
+        return Format(format, (IDictionary)args);
     }
 }
