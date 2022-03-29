@@ -56,5 +56,35 @@ namespace System.Reflection
                    && type.BaseType == typeof(object)
                    && type.Name.Contains("AnonymousType");
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the current type is a Simple type.
+        /// </summary>
+        /// <returns>true if the Simple type is a anonymous type; otherwise, false.</returns>
+        public static bool IsSimpleType(this Type type)
+        {
+            /* 简单类型定义
+             * 基元类型Boolean, Byte, SByte, Int16, UInt16, Int32, UInt32, Int64, UInt64, IntPtr, UIntPtr, Char, Double, and Single
+             * 非基元类型Enum, DateTime, DateTimeOffset, TimeSpan, Guid, string, decimal
+             * 可空值类型
+             */
+            Check.NotNull(type);
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                // nullable type, check if the nested type is simple.
+                return IsSimpleType((type.GetGenericArguments()[0]).GetTypeInfo());
+            }
+            return type.IsPrimitive
+                   || type.IsEnum
+                   || type == typeof(DateTime)
+                   || type == typeof(DateTimeOffset)
+                   || type == typeof(TimeSpan)
+                   || type == typeof(Guid)
+                   || type == typeof(string)
+                   || type == typeof(decimal);
+
+            //或者以下代码
+            //return System.ComponentModel.TypeDescriptor.GetConverter(type).CanConvertFrom(typeof(string));
+        }
     }
 }
