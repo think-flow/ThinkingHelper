@@ -13,7 +13,7 @@ public class HashMapTest
         {
             {"A", "a"}, {"B", "b"}, {"C", "c"}, {"D", "d"}
         };
-        var hashMap = new HashMap<string, string>(dic, null);
+        var hashMap = new HashMap<string, string>(dic, string.Empty);
         Assert.Equal(4, hashMap.Count);
     }
 
@@ -24,7 +24,7 @@ public class HashMapTest
         {
             {"A", "a"}, {"B", "b"}, {"C", "c"}, {"D", "d"}
         };
-        var hashMap = new HashMap<string, string>(dic, null);
+        var hashMap = new HashMap<string, string>(dic, string.Empty);
         bool value = hashMap.ContainsKey("A");
         Assert.True(value);
     }
@@ -38,7 +38,7 @@ public class HashMapTest
         {
             {"A", "a"}, {"B", "b"}, {"C", "c"}, {"D", "d"}
         };
-        var hashMap = new HashMap<string, string>(dic, null);
+        var hashMap = new HashMap<string, string>(dic, string.Empty);
         bool value = hashMap.ContainsKey(key);
         Assert.False(value);
     }
@@ -48,11 +48,11 @@ public class HashMapTest
     [InlineData("F")]
     public void Indexer_NonExistentKey_ShouldBeNull(string key)
     {
-        var dic = new Dictionary<string, string>
+        var dic = new Dictionary<string, string?>
         {
             {"A", "a"}, {"B", "b"}, {"C", "c"}, {"D", "d"}
         };
-        var hashMap = new HashMap<string, string>(dic, null);
+        var hashMap = new HashMap<string, string?>(dic, null);
         string? value = hashMap[key];
         Assert.Null(value);
     }
@@ -79,7 +79,7 @@ public class HashMapTest
         {
             {"A", "a"}, {"B", "b"}, {"C", "c"}, {"D", "d"}
         };
-        var hashMap = new HashMap<string, string>(dic, null);
+        var hashMap = new HashMap<string, string>(dic, string.Empty);
         string? value = hashMap[key];
         Assert.Equal("c", value);
     }
@@ -89,11 +89,11 @@ public class HashMapTest
     [InlineData("F")]
     public void TryGetValue_NonExistentKey_ShouldBeNull(string key)
     {
-        var dic = new Dictionary<string, string>
+        var dic = new Dictionary<string, string?>
         {
             {"A", "a"}, {"B", "b"}, {"C", "c"}, {"D", "d"}
         };
-        var hashMap = new HashMap<string, string>(dic, null);
+        var hashMap = new HashMap<string, string?>(dic, null);
         bool result = hashMap.TryGetValue(key, out string? value);
         Assert.True(result);
         Assert.Null(value);
@@ -123,7 +123,7 @@ public class HashMapTest
         {
             {"A", "a"}, {"B", "b"}, {"C", "c"}, {"D", "d"}
         };
-        var hashMap = new HashMap<string, string>(dic, null);
+        var hashMap = new HashMap<string, string>(dic, string.Empty);
         hashMap.SetDefaultValue("Q");
         Assert.Equal("Q", hashMap[key]);
     }
