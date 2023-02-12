@@ -1,25 +1,45 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ThinkingHelper;
-using ThinkingHelper.Collections.Generic;
 
 // ReSharper disable CheckNamespace
 namespace System.Linq;
 
 public static partial class ThinkingLinqExtensions
 {
-    public static async Task<List<T>> ToListAsync<T>(this Task<IEnumerable<T>> source)
+    public static async ValueTask<List<T>> ToListAsync<T>(this Task<IEnumerable<T>> source)
     {
-        var enumerable = await Check.NotNull(source);
-        return enumerable is List<T> list ? list : enumerable.ToList();
+        var enumerable = await Check.NotNull(source).ConfigureAwait(false);
+        return enumerable as List<T> ?? enumerable.ToList();
     }
 
-    public static async Task<T[]> ToArrayAsync<T>(this Task<IEnumerable<T>> source)
+    public static async ValueTask<T[]> ToArrayAsync<T>(this Task<IEnumerable<T>> source)
     {
-        var enumerable = await Check.NotNull(source);
-        return enumerable is T[] array ? array : enumerable.ToArray();
+        var enumerable = await Check.NotNull(source).ConfigureAwait(false);
+        return enumerable as T[] ?? enumerable.ToArray();
     }
 
+    public static async ValueTask<List<T>> ToListAsync<T>(this IAsyncEnumerable<T> source, CancellationToken cancellationToken = default)
+    {
+        var enumerable = Check.NotNull(source);
+        var list = new List<T>();
+        await foreach (var item in enumerable.WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            list.Add(item);
+        }
+
+        return list;
+    }
+
+    public static async ValueTask<T[]> ToArrayAsync<T>(this IAsyncEnumerable<T> source, CancellationToken cancellationToken = default)
+    {
+        var enumerable = Check.NotNull(source);
+        var list = await enumerable.ToListAsync(cancellationToken).ConfigureAwait(false);
+        return list.ToArray();
+    }
+
+    /*
     public static HashMap<TKey, TSource> ToHashMap<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
         where TKey : notnull
     {
@@ -33,4 +53,5 @@ public static partial class ThinkingLinqExtensions
         var dic = Check.NotNull(source).ToDictionary(keySelector, elementSelector);
         return new HashMap<TKey, TElement>(dic, default);
     }
+    */
 }

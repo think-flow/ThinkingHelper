@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace ThinkingHelper.Test.Extensions;
@@ -28,5 +29,25 @@ public class ThinkingLinqExtensionsTest
         Assert.Equal('b', charList[1]);
         Assert.Equal(3, charList2.Count);
         Assert.Equal('C', charList[2]);
+    }
+
+    [Fact]
+    public async Task ToArrayAsync_ShouldNotThrowException()
+    {
+        var array = await GetDataAsync().ToArrayAsync();
+        
+        Assert.Equal(1000,array.Length);
+        Assert.Equal(300,array[300]);
+        Assert.Equal(769,array[769]);
+
+        static async IAsyncEnumerable<int> GetDataAsync()
+        {
+            var enumerable = Enumerable.Range(0,1000);
+            foreach (int item in enumerable)
+            {
+                yield  return item;
+            }
+            await Task.CompletedTask;
+        }
     }
 }
