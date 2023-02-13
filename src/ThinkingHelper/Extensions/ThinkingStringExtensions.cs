@@ -54,9 +54,10 @@ public static class ThinkingStringExtensions
             int state = 0; //0 初始状态 1 普通字符  2 $ 变量标签  3 { 变量开始  4 } 变量结束
             bool isSet = false;
 
-            for (int i = 0; i < format.Length; i++)
+            var fms = format.AsSpan();
+            for (int i = 0; i < fms.Length; i++)
             {
-                char c = format[i];
+                char c = fms[i];
                 switch (state)
                 {
                     case 0:
@@ -98,20 +99,18 @@ public static class ThinkingStringExtensions
                             }
 
                             //[parameterName:format-string]
-                            string paraPattern = format.Substring(startIndex, index + 1);
+                            var paraPattern = fms[startIndex..(index + 1 + startIndex)];
                             //解析出参数名称和格式化字符串
-                            string[] patternParts = paraPattern.Split(':', 2);
-                            string paraName = patternParts[0];
+                            int indexOf = paraPattern.IndexOf(':');
+                            string paraName = indexOf == -1 ?
+                                paraPattern.ToString() : paraPattern[..indexOf].ToString();
                             if (!args.TryGetValue(paraName, out object? value))
                             {
                                 throw new FormatException($"The parameter \"{paraName}\" is not found in the argument dictionary! index:{startIndex}");
                             }
 
-                            string? paraFormat = null;
-                            if (patternParts.Length == 2)
-                            {
-                                paraFormat = patternParts[1];
-                            }
+                            string? paraFormat = indexOf == -1 ? 
+                                null : paraPattern[(indexOf + 1)..].ToString();
 
                             if (paraFormat == null || value == null)
                             {
