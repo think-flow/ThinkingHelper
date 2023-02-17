@@ -60,13 +60,30 @@ internal sealed class ObjectParameter : IParameter
             return true;
         }
 
-        var parts = name.Split('.');
+        string[] parts = name.Split('.');
         if (parts.Length == 0)
         {
             return false;
         }
 
         object? obj = _obj;
+        var stack = new Stack<string>(1);
+
+        //例如 A.B.Name 缓存中如果没有
+        //则尝试从缓存中读取 A.B的值，如果还没有
+        //则尝试从缓存中读取 A的值
+        for (int i = parts.Length - 1; i >= 1; i--)
+        {
+            string propertyName = string.Join('.', parts[..i]);
+            if (_cache.TryGetValue(propertyName, out cacheValue))
+            {
+                obj = cacheValue;
+                stack.Push(propertyName);
+                parts = parts[i..];
+                break;
+            }
+        }
+
         for (int i = 0; i < parts.Length; i++)
         {
             if (obj == null)
@@ -82,9 +99,12 @@ internal sealed class ObjectParameter : IParameter
             }
 
             obj = propertyInfo.GetValue(obj);
+            //将每个读取过的值都进行缓存
+            string propertyName = stack.TryPop(out string? prev) ? string.Concat(prev, ".", parts[i]) : parts[i];
+            _cache.TryAdd(propertyName, obj);
+            stack.Push(propertyName);
         }
 
-        _cache.TryAdd(name, obj);
         value = obj;
         return true;
     }
