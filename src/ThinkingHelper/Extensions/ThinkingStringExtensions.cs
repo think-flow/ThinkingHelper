@@ -1,11 +1,9 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using ThinkingHelper;
 using ThinkingHelper.Collections;
-using ThinkingHelper.Reflection.Extensions;
 
 // ReSharper disable CheckNamespace
 namespace System;
@@ -42,6 +40,7 @@ public static class ThinkingStringExtensions
         {
             return FormatCore(format, new DictionaryParameter(dicArgs));
         }
+
         return FormatCore(format, new ObjectParameter(args));
 
         static string FormatCore(string format, IParameter args)
@@ -53,6 +52,7 @@ public static class ThinkingStringExtensions
             int endIndex = 0; //变量名结束下标
             int state = 0; //0 初始状态 1 普通字符  2 $ 变量标签  3 { 变量开始  4 } 变量结束
             bool isSet = false;
+            Span<char> formatBuffer = stackalloc char[64];
 
             var fms = format.AsSpan();
             for (int i = 0; i < fms.Length; i++)
@@ -71,69 +71,96 @@ public static class ThinkingStringExtensions
                         builder.Append(c);
                         continue;
                     case 2:
-                        if (c == '$')
+                        switch (c)
                         {
-                            //两个$$ 转义为$
-                            state = 1;
-                            builder.Append('$');
-                            continue;
+                            case '$':
+                                //两个$$ 转义为$
+                                state = 1;
+                                builder.Append('$');
+                                continue;
+                            case '{':
+                                state = 3;
+                                startIndex = i + 1;
+                                continue;
+                            default:
+                                throw new FormatException($"Invalid placeholder! character $ must be followed by $, or{{ index:{i}");
                         }
-
-                        if (c == '{')
-                        {
-                            state = 3;
-                            startIndex = i + 1;
-                            continue;
-                        }
-
-                        throw new FormatException($"Invalid placeholder! character $ must be followed by $, or{{ index:{i}");
                     case 3:
-                        if (c == '}')
+                        if (c != '}')
                         {
-                            isSet = true;
-                            state = 1;
-                            int index = endIndex - startIndex;
-                            if (index < 0)
-                            {
-                                throw new FormatException($"Empty name of parameter! index:{startIndex}");
-                            }
+                            endIndex = i;
+                            continue;
+                        }
 
-                            //[parameterName:format-string]
-                            var paraPattern = fms[startIndex..(index + 1 + startIndex)];
-                            //解析出参数名称和格式化字符串
-                            int indexOf = paraPattern.IndexOf(':');
-                            string paraName = indexOf == -1 ?
-                                paraPattern.ToString() : paraPattern[..indexOf].ToString();
-                            if (!args.TryGetValue(paraName, out object? value))
-                            {
-                                throw new FormatException($"The parameter \"{paraName}\" is not found in the argument dictionary! index:{startIndex}");
-                            }
+                        //case c == '}'
+                        isSet = true;
+                        state = 1;
+                        int index = endIndex - startIndex;
+                        if (index < 0)
+                        {
+                            throw new FormatException($"Empty name of parameter! index:{startIndex}");
+                        }
 
-                            string? paraFormat = indexOf == -1 ? 
-                                null : paraPattern[(indexOf + 1)..].ToString();
+                        #region Get Value
 
-                            if (paraFormat == null || value == null)
-                            {
-                                //不存在格式化字符串时的处理
-                                builder.Append(value);
-                            }
-                            else
+                        //[parameterName:format-string]
+                        var paraPattern = fms[startIndex..(index + 1 + startIndex)];
+                        //解析出参数名称和格式化字符串
+                        int indexOfColon = paraPattern.IndexOf(':');
+                        string paraName = indexOfColon == -1 ? paraPattern.ToString() : paraPattern[..indexOfColon].ToString();
+                        //如何能通过span类型的key 获取字典中的value呢？
+                        //除非.net能提供一种通过span检索的功能，否则该处已无法优化
+                        if (!args.TryGetValue(paraName, out object? value))
+                        {
+                            throw new FormatException($"The parameter \"{paraName}\" is not found in the argument dictionary! index:{startIndex}");
+                        }
+
+                        if (value is null)
+                        {
+                            //null值 处理为空字符串
+                            continue;
+                        }
+
+                        #endregion
+
+                        #region Format
+
+                        if (indexOfColon == -1)
+                        {
+                            //不存在格式化字符串时的处理
+                            builder.Append(value);
+                        }
+                        else
+                        {
+                            var papaFormat = paraPattern[(indexOfColon + 1)..];
+                            switch (value)
                             {
                                 //存在格式化字符串时的处理
-                                if (value is IFormattable formatValue)
+                                case ISpanFormattable formattable:
                                 {
-                                    builder.Append(formatValue.ToString(paraFormat, CultureInfo.CurrentCulture));
-                                }
-                                else
-                                {
-                                    throw new FormatException($"The type \"{value.GetType().FullName}\" of the value corresponding to parameter \"{paraName}\" does not implement IFormattable interface! index:{startIndex}");
-                                }
-                            }
+                                    bool successfully = formattable.TryFormat(formatBuffer, out int charsWritten, papaFormat, CultureInfo.CurrentCulture);
+                                    if (successfully)
+                                    {
+                                        //当解析出的字符数<=64时，使用栈空间。
+                                        builder.Append(formatBuffer[..charsWritten]);
+                                    }
+                                    else
+                                    {
+                                        builder.Append(formattable.ToString(new string(papaFormat), CultureInfo.CurrentCulture));
+                                    }
 
-                            continue;
+                                    break;
+                                }
+                                case IFormattable formattable:
+                                    builder.Append(formattable.ToString(new string(papaFormat), CultureInfo.CurrentCulture));
+                                    break;
+                                default:
+                                    throw new FormatException($"The type \"{value.GetType().FullName}\" of the value corresponding to parameter \"{paraName}\" does not implement IFormattable interface! index:{startIndex}");
+                            }
                         }
 
-                        endIndex = i;
+                        #endregion
+
                         continue;
                     default:
                         throw new Exception("Unknown State! Please contact the lib owner!");
