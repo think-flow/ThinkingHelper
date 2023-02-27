@@ -109,7 +109,9 @@ public static class ThinkingStringExtensions
                         int indexOfColon = paraPattern.IndexOf(':');
                         string paraName = indexOfColon == -1 ? paraPattern.ToString() : paraPattern[..indexOfColon].ToString();
                         //如何能通过span类型的key 获取字典中的value呢？
-                        //除非.net能提供一种通过span检索的功能，否则该处已无法优化
+                        //如果可以使用span检索key，那执行时间和内存分配，预计能提高30%
+                        //除非.net能提供一种通过span检索的功能，否则该处已无法优化 https://github.com/dotnet/runtime/issues/27229
+                        //或者使用第三分库？https://github.com/koszeggy/KGySoft.CoreLibraries/blob/master/KGySoft.CoreLibraries/Collections/StringKeyedDictionary.cs
                         if (!args.TryGetValue(paraName, out object? value))
                         {
                             throw new FormatException($"The parameter \"{paraName}\" is not found in the argument dictionary! index:{startIndex}");

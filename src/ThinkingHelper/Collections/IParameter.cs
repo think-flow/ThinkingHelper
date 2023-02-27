@@ -45,7 +45,7 @@ internal sealed class ObjectParameter : IParameter
     {
         Check.NotNull(obj);
         _obj = obj;
-        _cache = new Dictionary<string, object?>();
+        _cache = new Dictionary<string, object?>(StringComparer.Ordinal);
     }
 
     public bool TryGetValue(string name, out object? value)
