@@ -172,7 +172,7 @@ public class DelayQueueTest
     }
 
     //多线程测试
-    [Fact(Skip = "这个测试耗时10几秒，没必要不用每次都测试")]
+    [Fact(Skip = "这个测试耗时40多秒，没必要不用每次都测试")]
     public async Task TestMultiThread()
     {
         var delayQueue = new DelayQueue<TestDelayItem<int>>();
