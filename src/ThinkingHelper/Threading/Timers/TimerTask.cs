@@ -20,43 +20,14 @@ public interface ITimerTask
 /// <summary>
 /// 代表需要定时执行的任务
 /// </summary>
-internal class TimerTask : ITimerTask
+internal abstract class TimerTask : ITimerTask
 {
     private TimerTaskEntry? _timerTaskEntry;
 
-    public TimerTask(Action task, TimeSpan delay)
-        : this(task, (long) delay.TotalMilliseconds)
+    protected TimerTask(long delayMs)
     {
-    }
-
-    public TimerTask(Action task, long delayMs)
-    {
-        Delegate = task;
-        IsAsync = false;
         DelayMs = delayMs;
     }
-
-    public TimerTask(Func<Task> task, TimeSpan delay)
-        : this(task, (long) delay.TotalMilliseconds)
-    {
-    }
-
-    public TimerTask(Func<Task> task, long delayMs)
-    {
-        Delegate = task;
-        IsAsync = true;
-        DelayMs = delayMs;
-    }
-
-    /// <summary>
-    /// 需要执行的elegate
-    /// </summary>
-    public Delegate Delegate { get; }
-
-    /// <summary>
-    /// 是否是异步方法
-    /// </summary>
-    public bool IsAsync { get; }
 
     /// <inheritdoc />
     public long DelayMs { get; }
@@ -85,4 +56,74 @@ internal class TimerTask : ITimerTask
             _timerTaskEntry = entry;
         }
     }
+}
+
+internal class ActionTimerTask : TimerTask
+{
+    public ActionTimerTask(Action task, long delayMs)
+        : base(delayMs)
+    {
+        Delegate = task;
+    }
+
+    public ActionTimerTask(Action task, TimeSpan delay)
+        : this(task, (long) delay.TotalMilliseconds)
+    {
+    }
+
+    public Action Delegate { get; }
+}
+
+internal class ActionTimerTaskWithState : TimerTask
+{
+    public ActionTimerTaskWithState(Action<object?> task, object? state, long delayMs)
+        : base(delayMs)
+    {
+        Delegate = task;
+        State = state;
+    }
+
+    public ActionTimerTaskWithState(Action<object?> task, object? state, TimeSpan delay)
+        : this(task, state, (long) delay.TotalMilliseconds)
+    {
+    }
+
+    public Action<object?> Delegate { get; }
+
+    public object? State { get; }
+}
+
+internal class FuncAsyncTimerTask : TimerTask
+{
+    public FuncAsyncTimerTask(Func<Task> task, long delayMs)
+        : base(delayMs)
+    {
+        Delegate = task;
+    }
+
+    public FuncAsyncTimerTask(Func<Task> task, TimeSpan delay)
+        : this(task, (long) delay.TotalMilliseconds)
+    {
+    }
+
+    public Func<Task> Delegate { get; }
+}
+
+internal class FuncAsyncTimerTaskWithState : TimerTask
+{
+    public FuncAsyncTimerTaskWithState(Func<object?, Task> task, object? state, long delayMs)
+        : base(delayMs)
+    {
+        Delegate = task;
+        State = state;
+    }
+
+    public FuncAsyncTimerTaskWithState(Func<object?, Task> task, object? state, TimeSpan delay)
+        : this(task, state, (long) delay.TotalMilliseconds)
+    {
+    }
+
+    public Func<object?, Task> Delegate { get; }
+
+    public object? State { get; }
 }

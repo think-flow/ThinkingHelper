@@ -81,12 +81,16 @@ public sealed partial class TaskTimer : IDisposable
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add(Action task, long timeoutMs) => Add(new TimerTask(task, timeoutMs));
+    public ITimerTask Add(Action task, long timeoutMs) => Add(new ActionTimerTask(task, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
     public ITimerTask Add(Action task, TimeSpan timeout) => Add(task, (long) timeout.TotalMilliseconds);
+
+    public ITimerTask Add(Action<object?> task, object? state, long timeoutMs) => Add(new ActionTimerTaskWithState(task, state, timeoutMs));
+
+    public ITimerTask Add(Action<object?> task, object? state, TimeSpan timeout) => Add(task, state, (long) timeout.TotalMilliseconds);
 
     /// <summary>
     /// 关闭定时器，并释放所有资源
@@ -96,12 +100,16 @@ public sealed partial class TaskTimer : IDisposable
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add(Func<Task> task, long timeoutMs) => Add(new TimerTask(task, timeoutMs));
+    public ITimerTask Add(Func<Task> task, long timeoutMs) => Add(new FuncAsyncTimerTask(task, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
     public ITimerTask Add(Func<Task> task, TimeSpan timeout) => Add(task, (long) timeout.TotalMilliseconds);
+
+    public ITimerTask Add(Func<object?, Task> task, object? state, long timeoutMs) => Add(new FuncAsyncTimerTaskWithState(task, state, timeoutMs));
+
+    public ITimerTask Add(Func<object?, Task> task, object? state, TimeSpan timeout) => Add(task, state, (long) timeout.TotalMilliseconds);
 
     private void AddTimerTaskEntry(TimerTaskEntry entry)
     {
@@ -113,20 +121,30 @@ public sealed partial class TaskTimer : IDisposable
                 //一定是已过期状态，立即执行相关任务
                 var timerTask = entry.TimerTask;
                 Debug.Assert(timerTask is not null);
-                if (timerTask.IsAsync)
+                switch (timerTask)
                 {
-                    Task.Factory.StartNew((Func<Task>) timerTask.Delegate, _tokenSource.Token,
-                        TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-
-                    //如果想要捕捉到任务中出现的未捕获异常，那么可以通过ContinueWith,来捕获未处理异常，并通过回调或者事件方式，将异常传递给用户注册的异常处理器
-                    //Task.Factory.StartNew((Func<Task>) timerTask.Delegate, _tokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default).Unwrap().ContinueWith(t => _exceptionHandler?.Invoke(t.Exception!.GetBaseException()), TaskContinuationOptions.OnlyOnFaulted);
-                }
-                else
-                {
-                    Task.Factory.StartNew((Action) timerTask.Delegate, _tokenSource.Token,
-                        TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
-
-                    //Task.Factory.StartNew((Action) timerTask.Delegate, _tokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default).ContinueWith(t => _exceptionHandler?.Invoke(t.Exception!.GetBaseException()), TaskContinuationOptions.OnlyOnFaulted);
+                    case ActionTimerTask task:
+                        Task.Factory.StartNew(task.Delegate, _tokenSource.Token,
+                            TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+                        //如果想要捕捉到任务中出现的未捕获异常，那么可以通过ContinueWith,来捕获未处理异常，并通过回调或者事件方式，将异常传递给用户注册的异常处理器
+                        // Task.Factory.StartNew(task.Delegate, _tokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default)
+                        //     .Unwrap()
+                        //     .ContinueWith(t => _exceptionHandler?.Invoke(t.Exception!.GetBaseException()), TaskContinuationOptions.OnlyOnFaulted);
+                        break;
+                    case ActionTimerTaskWithState task:
+                        Task.Factory.StartNew(task.Delegate, task.State, _tokenSource.Token,
+                            TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+                        break;
+                    case FuncAsyncTimerTask task:
+                        Task.Factory.StartNew(task.Delegate, _tokenSource.Token,
+                            TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+                        break;
+                    case FuncAsyncTimerTaskWithState task:
+                        Task.Factory.StartNew(task.Delegate, task.State, _tokenSource.Token,
+                            TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+                        break;
+                    default:
+                        throw new InvalidOperationException("unknown TimerTask derived type");
                 }
             }
         }
