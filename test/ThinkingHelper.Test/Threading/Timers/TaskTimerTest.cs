@@ -156,7 +156,7 @@ public class TaskTimerTest
         Assert.Equal(11, result);
     }
 
-    [Fact]
+    [Fact(Skip = "这个测试耗时1分钟，没必要每次都测试")]
     public async Task Executing_MultiTest()
     {
         //每秒执行500个任务，总过时间是1分钟
@@ -164,18 +164,17 @@ public class TaskTimerTest
         var timer = new TaskTimer(100, 60);
         for (int i = 0; i < 60; i++)
         {
-            int c = i;
             for (int j = 0; j < 5000; j++)
             {
-                int d = j;
-                timer.Add(() =>
+                timer.Add(static obj =>
                 {
-                    collection.Add((c, d, DateTimeOffset.Now));
-                }, TimeSpan.FromSeconds(1 + i));
+                    (int time, int num, var collection) = ((int, int, ConcurrentBag<(int, int, DateTimeOffset)>)) obj!;
+                    collection.Add((time, num, DateTimeOffset.Now));
+                }, state: (i, j, collection), TimeSpan.FromSeconds(1 + i));
             }
         }
 
-        await Task.Delay(TimeSpan.FromSeconds(70));
+        await Task.Delay(TimeSpan.FromSeconds(61));
         Assert.Equal(300000, collection.Count);
         foreach (var grouping in collection.GroupBy(i => i.time).OrderBy(i => i.Key))
         {
