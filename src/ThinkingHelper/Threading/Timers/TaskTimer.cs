@@ -37,6 +37,18 @@ public sealed partial class TaskTimer : IDisposable
     }
 
     /// <summary>
+    /// </summary>
+    /// <param name="tickMs">时间槽精度，单位毫秒</param>
+    /// <param name="wheelSize">时间槽数量</param>
+    /// <example>
+    /// 时间槽精度请按需设置。例如设为1000毫秒，如果任务延时500毫秒，那么任务将立即运行。而如果延时设为1400，那么任务将在1000毫秒后立即运行，而不是1400毫秒运行。
+    /// </example>
+    public TaskTimer(long tickMs, int wheelSize)
+        : this(tickMs, wheelSize, DateTimeOffset.Now.ToUnixTimeMilliseconds())
+    {
+    }
+
+    /// <summary>
     /// 定时器中的任务数
     /// </summary>
     public int Count

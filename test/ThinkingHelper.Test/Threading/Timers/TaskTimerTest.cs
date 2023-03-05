@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ThinkingHelper.Threading.Timers;
@@ -154,7 +156,34 @@ public class TaskTimerTest
         Assert.Equal(11, result);
     }
 
-    //todo 测试大量任务下的执行精度
+    [Fact]
+    public async Task Executing_MultiTest()
+    {
+        //每秒执行500个任务，总过时间是1分钟
+        var collection = new ConcurrentBag<(int time, int num, DateTimeOffset date)>();
+        var timer = new TaskTimer(100, 60);
+        for (int i = 0; i < 60; i++)
+        {
+            int c = i;
+            for (int j = 0; j < 5000; j++)
+            {
+                int d = j;
+                timer.Add(() =>
+                {
+                    collection.Add((c, d, DateTimeOffset.Now));
+                }, TimeSpan.FromSeconds(1 + i));
+            }
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(70));
+        Assert.Equal(300000, collection.Count);
+        foreach (var grouping in collection.GroupBy(i => i.time).OrderBy(i => i.Key))
+        {
+            _output.WriteLine($"第{grouping.Key + 1}秒 共执行了{grouping.Count()}个任务");
+            var list = grouping.OrderBy(group => group.date).ToList();
+            _output.WriteLine($"第一个任务与最后一个执行的任务相差时间为 {(list.Last().date - list.First().date).TotalMilliseconds} 毫秒");
+        }
+    }
 
     [Fact]
     public async Task Cancel_TaskNotExecuted()
