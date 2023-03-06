@@ -11,7 +11,7 @@
         <NeutralLanguage></NeutralLanguage>
         <PackageProjectUrl>https://github.com/think-flow/ThinkingHelper</PackageProjectUrl>
         <RepositoryUrl>https://github.com/think-flow/ThinkingHelper</RepositoryUrl>
-        <Version>1.0.1</Version>
+        <Version>1.0.2</Version>
         <NullAble>enable</NullAble>
     </PropertyGroup>
 </Project>
