@@ -9,7 +9,7 @@ namespace ThinkingHelper.Threading.Timers;
 /// <summary>
 /// 基于时间轮的任务定时器
 /// </summary>
-public sealed partial class TaskTimer : IDisposable
+public sealed class TaskTimer : IDisposable
 {
     private readonly DelayQueue<TimerTaskList> _delayQueue;
     private readonly ReaderWriterLockSlim _lock;
@@ -22,7 +22,7 @@ public sealed partial class TaskTimer : IDisposable
     /// </summary>
     /// <param name="tickMs">时间槽精度，单位毫秒</param>
     /// <param name="wheelSize">时间槽数量</param>
-    /// <param name="startMs">起始时间。毫秒时间戳</param>
+    /// <param name="startMs">时间轮起始时间。毫秒时间戳。如无特殊情况，该项请设置为当前unix毫秒时间戳</param>
     /// <example>
     /// 时间槽精度请按需设置。例如设为1000毫秒，如果任务延时500毫秒，那么任务将立即运行。而如果延时设为1400，那么任务将在1000毫秒后立即运行，而不是1400毫秒运行。
     /// </example>
@@ -61,6 +61,22 @@ public sealed partial class TaskTimer : IDisposable
     }
 
     /// <summary>
+    /// 关闭定时器，并释放所有资源
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+
+        _lock.Dispose();
+        _tokenSource.Cancel();
+        _tokenSource.Dispose();
+        //通知所有的TimerTask取消
+
+
+        _disposed = true;
+    }
+
+    /// <summary>
     /// 添加定时任务
     /// </summary>
     private ITimerTask Add(TimerTask task)
@@ -69,7 +85,9 @@ public sealed partial class TaskTimer : IDisposable
         _lock.EnterReadLock();
         try
         {
-            AddTimerTaskEntry(new TimerTaskEntry(task, task.DelayMs + DateTimeOffset.Now.ToUnixTimeMilliseconds()));
+            //添加的任务绝对过期时间，将是用时间轮中记录的时间+设置的延时时间决定
+            //所以如果时间轮时间小于当前时间，那个如果加上延时时间，也不大于当前时间，那么任务将立即过期并在tickMsg后执行
+            AddTimerTaskEntry(new TimerTaskEntry(task, task.DelayMs + _timingWheel.CurrentTime));
             return task;
         }
         finally
@@ -88,8 +106,14 @@ public sealed partial class TaskTimer : IDisposable
     /// </summary>
     public ITimerTask Add(Action task, TimeSpan timeout) => Add(task, (long) timeout.TotalMilliseconds);
 
+    /// <summary>
+    /// 添加定时任务
+    /// </summary>
     public ITimerTask Add(Action<object?> task, object? state, long timeoutMs) => Add(new ActionTimerTaskWithState(task, state, timeoutMs));
 
+    /// <summary>
+    /// 添加定时任务
+    /// </summary>
     public ITimerTask Add(Action<object?> task, object? state, TimeSpan timeout) => Add(task, state, (long) timeout.TotalMilliseconds);
 
     /// <summary>
@@ -107,8 +131,14 @@ public sealed partial class TaskTimer : IDisposable
     /// </summary>
     public ITimerTask Add(Func<Task> task, TimeSpan timeout) => Add(task, (long) timeout.TotalMilliseconds);
 
+    /// <summary>
+    /// 添加定时任务
+    /// </summary>
     public ITimerTask Add(Func<object?, Task> task, object? state, long timeoutMs) => Add(new FuncAsyncTimerTaskWithState(task, state, timeoutMs));
 
+    /// <summary>
+    /// 添加定时任务
+    /// </summary>
     public ITimerTask Add(Func<object?, Task> task, object? state, TimeSpan timeout) => Add(task, state, (long) timeout.TotalMilliseconds);
 
     private void AddTimerTaskEntry(TimerTaskEntry entry)
@@ -201,25 +231,6 @@ public sealed partial class TaskTimer : IDisposable
                 }
             }
         }
-    }
-}
-
-public partial class TaskTimer
-{
-    /// <summary>
-    /// 关闭定时器，并释放所有资源
-    /// </summary>
-    public void Dispose()
-    {
-        if (_disposed) return;
-
-        _lock.Dispose();
-        _tokenSource.Cancel();
-        _tokenSource.Dispose();
-        //通知所有的TimerTask取消
-
-
-        _disposed = true;
     }
 
     private void ThrowIfDisposed()

@@ -11,7 +11,15 @@
         <NeutralLanguage></NeutralLanguage>
         <PackageProjectUrl>https://github.com/think-flow/ThinkingHelper</PackageProjectUrl>
         <RepositoryUrl>https://github.com/think-flow/ThinkingHelper</RepositoryUrl>
-        <Version>1.0.2</Version>
+        <Version>1.0.3</Version>
         <NullAble>enable</NullAble>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <DocumentationFile>bin\Debug\ThinkingHelper.xml</DocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <DocumentationFile>bin\Release\ThinkingHelper.xml</DocumentationFile>
     </PropertyGroup>
 </Project>
