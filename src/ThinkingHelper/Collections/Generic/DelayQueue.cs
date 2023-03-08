@@ -7,6 +7,9 @@ using System.Threading;
 
 namespace ThinkingHelper.Collections.Generic;
 
+/// <summary>
+/// 表示一个可以被延时队列接收的，延时项
+/// </summary>
 public interface IDelayable<in TElement> : IComparable<TElement>
 {
     /// <summary>
@@ -24,17 +27,18 @@ public interface IDelayable<in TElement> : IComparable<TElement>
 public class DelayQueue<TElement> where TElement : IDelayable<TElement>
 {
     private readonly object _lock = new object();
+    private readonly PriorityQueue<TElement, TElement> _queue; //使用优先队列作为底层数据结构
+    private Thread? _leader; //等待线程标识
 
-    //使用优先队列作为底层数据结构
-    private readonly PriorityQueue<TElement, TElement> _queue;
-
-    //等待线程标识
-    private Thread? _leader;
-
+    /// <summary>
+    /// </summary>
     public DelayQueue() : this(0)
     {
     }
 
+    /// <summary>
+    /// </summary>
+    /// <param name="initialCapacity">底层优先队列的初始容量</param>
     public DelayQueue(int initialCapacity)
     {
         _queue = new PriorityQueue<TElement, TElement>(initialCapacity);
@@ -125,7 +129,8 @@ public class DelayQueue<TElement> where TElement : IDelayable<TElement>
                             return false;
                         }
 
-                        if (timeout.TotalMilliseconds < delay || _leader != null)
+                        if ((timeout.TotalMilliseconds < delay && timeout != Timeout.InfiniteTimeSpan)
+                            || _leader != null)
                         {
                             //_leader的作用在于，如果有一个线程在等待数据，说明还没有数据到期。其他线程没必要抢占锁资源。继续等待即可
                             //超时时间小于延迟时间 或者有其他线程在等待数据，那么当前线程也等待
@@ -167,6 +172,13 @@ public class DelayQueue<TElement> where TElement : IDelayable<TElement>
 
         static TimeSpan MonitorWait(Stopwatch sw, object obj, TimeSpan timeout)
         {
+            //如果超时时间设为无限，则剩余超时时间也为无限
+            if (timeout == Timeout.InfiniteTimeSpan)
+            {
+                Monitor.Wait(obj, timeout);
+                return timeout;
+            }
+
             sw.Restart();
             Monitor.Wait(obj, timeout);
             sw.Stop();
@@ -213,6 +225,14 @@ public class DelayQueue<TElement> where TElement : IDelayable<TElement>
         }
     }
 
+    /// <summary>
+    /// Sets the capacity to the actual number of items in the underlying <see cref="PriorityQueue{TElement, TPriority}" />,
+    /// if that is less than 90 percent of current capacity.
+    /// </summary>
+    /// <remarks>
+    /// This method can be used to minimize a collection's memory overhead
+    /// if no new elements will be added to the collection.
+    /// </remarks>
     public void TrimExcess()
     {
         lock (_lock)
