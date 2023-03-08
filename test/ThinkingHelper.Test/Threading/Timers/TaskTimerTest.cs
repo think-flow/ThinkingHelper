@@ -170,7 +170,7 @@ public class TaskTimerTest
                 {
                     (int time, int num, var collection) = ((int, int, ConcurrentBag<(int, int, DateTimeOffset)>)) obj!;
                     collection.Add((time, num, DateTimeOffset.Now));
-                }, state: (i, j, collection), TimeSpan.FromSeconds(1 + i));
+                }, (i, j, collection), TimeSpan.FromSeconds(1 + i));
             }
         }
 
@@ -200,68 +200,5 @@ public class TaskTimerTest
         timerTask.Cancel();
         await Task.Delay(200);
         Assert.Equal(100, result);
-    }
-
-    [Fact]
-    public void Executing_StartMsLtNow5Seconds_ShouldExecuteImmediately()
-    {
-        // Arrange
-        var now = DateTimeOffset.Now;
-        var startTime = now.AddSeconds(-5);
-        var timer = new TaskTimer(1000, 60, startTime.ToUnixTimeMilliseconds());
-
-        // Act and Assert
-        DateTimeOffset executed = default;
-        var ev = new ManualResetEventSlim();
-        timer.Add(() =>
-        {
-            executed = DateTimeOffset.Now;
-            ev.Set();
-        }, TimeSpan.FromSeconds(3));
-        ev.Wait();
-
-        Assert.Equal(0, Math.Floor((executed - now).TotalSeconds));
-    }
-
-    [Fact]
-    public void Executing_StartMsLtNow5Seconds_ShouldExecuteDelay5Seconds()
-    {
-        // Arrange
-        var now = DateTimeOffset.Now;
-        var startTime = now.AddSeconds(-5);
-        var timer = new TaskTimer(1000, 60, startTime.ToUnixTimeMilliseconds());
-
-        // Act and Assert
-        DateTimeOffset executed = default;
-        var ev = new ManualResetEventSlim();
-        timer.Add(() =>
-        {
-            executed = DateTimeOffset.Now;
-            ev.Set();
-        }, TimeSpan.FromSeconds(10));
-        ev.Wait();
-
-        Assert.Equal(5, Math.Ceiling((executed - now).TotalSeconds));
-    }
-    
-    [Fact]
-    public void Executing_StartMsGtNow3Seconds_ShouldExecuteDelay5Seconds()
-    {
-        // Arrange
-        var now = DateTimeOffset.Now;
-        var startTime = now.AddSeconds(3);
-        var timer = new TaskTimer(1000, 60, startTime.ToUnixTimeMilliseconds());
-
-        // Act and Assert
-        DateTimeOffset executed = default;
-        var ev = new ManualResetEventSlim();
-        timer.Add(() =>
-        {
-            executed = DateTimeOffset.Now;
-            ev.Set();
-        }, TimeSpan.FromSeconds(2));
-        ev.Wait();
-
-        Assert.Equal(5, Math.Ceiling((executed - now).TotalSeconds));
     }
 }

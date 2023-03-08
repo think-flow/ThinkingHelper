@@ -1,6 +1,5 @@
 ﻿using ThinkingHelper.Collections.Generic;
 
-// ReSharper disable ConvertToAutoPropertyWithPrivateSetter
 namespace ThinkingHelper.Threading.Timers;
 
 /// <summary>
@@ -39,11 +38,6 @@ internal sealed class TimingWheel
             _buckets[i] = new TimerTaskList(taskCounter);
         }
     }
-
-    /// <summary>
-    /// 获得时间轮中维护的当前时间
-    /// </summary>
-    public long CurrentTime => _currentTime;
 
     /// <summary>
     /// 添加任务
