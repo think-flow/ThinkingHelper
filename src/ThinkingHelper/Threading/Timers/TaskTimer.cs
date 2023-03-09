@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using ThinkingHelper.Collections.Generic;
@@ -36,7 +35,7 @@ public sealed class TaskTimer : IDisposable
         _timingWheel = new TimingWheel(tickMs, wheelSize, startMs.Value, _taskCounter, _delayQueue);
         _lock = new ReaderWriterLockSlim();
         _tokenSource = new CancellationTokenSource();
-        RunTimer(_tokenSource.Token);
+        RunTimer();
     }
 
     /// <summary>
@@ -58,15 +57,15 @@ public sealed class TaskTimer : IDisposable
     {
         if (_disposed) return;
 
-        _lock.Dispose();
         _tokenSource.Cancel();
         _tokenSource.Dispose();
+        _lock.Dispose();
 
         _disposed = true;
     }
 
     //添加定时任务
-    private ITimerTask Add(TimerTask task)
+    private TaskInfo Add(TimerTask task)
     {
         ThrowIfDisposed();
         _lock.EnterReadLock();
@@ -75,7 +74,7 @@ public sealed class TaskTimer : IDisposable
             //添加的任务绝对过期时间，将是用时间轮中记录的时间+设置的延时时间决定
             //所以如果时间轮时间小于当前时间，那个如果加上延时时间，也不大于当前时间，那么任务将立即过期并在tickMsg后执行
             AddTimerTaskEntry(new TimerTaskEntry(task, task.DelayMs + DateTimeOffset.Now.ToUnixTimeMilliseconds()));
-            return task;
+            return new TaskInfo(task);
         }
         finally
         {
@@ -107,19 +106,20 @@ public sealed class TaskTimer : IDisposable
 
         //任务过期，立即执行相关任务
         var timerTask = entry.TimerTask;
-        Debug.Assert(timerTask is not null);
+        if (timerTask is null) return;
+
         switch (timerTask)
         {
             case SyncTimerTask task:
-                Task.Factory.StartNew(task.Execute, task, _tokenSource.Token,
+                Task.Factory.StartNew(task.Execute, _tokenSource.Token,
                     TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 break;
             case AsyncTimerTask task:
                 //如果想要捕捉到任务中出现的未捕获异常，那么可以通过ContinueWith,来捕获未处理异常，并通过回调或者事件方式，将异常传递给用户注册的异常处理器
-                // Task.Factory.StartNew(task.ExecuteAsync, task, _tokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default)
+                // Task.Factory.StartNew(task.ExecuteAsync, _tokenSource.Token, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default)
                 //     .Unwrap()
                 //     .ContinueWith(t => _exceptionHandler?.Invoke(t.Exception!.GetBaseException()), TaskContinuationOptions.OnlyOnFaulted);
-                Task.Factory.StartNew(task.ExecuteAsync, task, _tokenSource.Token,
+                Task.Factory.StartNew(task.ExecuteAsync, _tokenSource.Token,
                     TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
                 break;
             default:
@@ -134,12 +134,11 @@ public sealed class TaskTimer : IDisposable
     }
 
     //推进时间轮
-    private bool AdvanceClock(long timeoutMs, CancellationToken cancellationToken)
+    private bool AdvanceClock(long timeoutMs)
     {
         //timeout设置-1，防止时间轮指针空转
         if (_delayQueue.TryDequeue(out var bucket, timeoutMs))
         {
-            cancellationToken.ThrowIfCancellationRequested();
             _lock.EnterWriteLock();
             try
             {
@@ -150,7 +149,7 @@ public sealed class TaskTimer : IDisposable
                     // 将溢出时间轮插入到低层的时间轮中
                     bucket.Flush(AddTimerTaskEntry);
                     //使用无阻塞方式，获取 将溢出时间轮插入到低层的时间轮中后可能存在的数据
-                } while (_delayQueue.TryDequeue(out bucket));
+                } while (!_tokenSource.IsCancellationRequested && _delayQueue.TryDequeue(out bucket));
             }
             finally
             {
@@ -164,26 +163,32 @@ public sealed class TaskTimer : IDisposable
     }
 
     //启动定时器线程
-    private void RunTimer(CancellationToken cancellationToken)
+    private void RunTimer()
     {
         //开启一个新线程，用来推进时间轮
-        new Thread(RunTimerCore)
+        var thread = new Thread(RunTimerCore)
         {
             IsBackground = true,
             Name = "TimingWheelTimer"
-        }.Start();
+        };
+        thread.Start(thread);
 
-        void RunTimerCore()
+        void RunTimerCore(object? state)
         {
-            while (!cancellationToken.IsCancellationRequested)
+            var timingWheelTimerThread = (Thread) state!;
+            //注册CancellationToken取消回调
+            //通过线程的Interrupt方法，中断可能处于阻塞状态的timer线程。已便使线程正常退出
+            _tokenSource.Token.Register(timingWheelTimerThread.Interrupt);
+
+            while (!_tokenSource.IsCancellationRequested)
             {
                 try
                 {
-                    AdvanceClock(Timeout.Infinite, cancellationToken);
-                    cancellationToken.ThrowIfCancellationRequested();
+                    AdvanceClock(Timeout.Infinite);
                 }
-                catch (OperationCanceledException)
+                catch (ThreadInterruptedException)
                 {
+                    //捕获线程中断异常，并让线程跳出循环正常结束
                     break;
                 }
             }
@@ -200,97 +205,97 @@ public sealed class TaskTimer : IDisposable
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add(Action task, long timeoutMs)
+    public TaskInfo Add(Action task, long timeoutMs)
         => Add(new SingleActionTimerTask(task, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add<TState>(Action<TState?> task, TState? state, long timeoutMs)
+    public TaskInfo Add<TState>(Action<TState?> task, TState? state, long timeoutMs)
         => Add(new SingleActionTimerTask<TState>(task, state, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add(Func<Task> task, long timeoutMs)
+    public TaskInfo Add(Func<Task> task, long timeoutMs)
         => Add(new SingleFuncTimerTask(task, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add<TState>(Func<TState?, Task> task, TState? state, long timeoutMs)
+    public TaskInfo Add<TState>(Func<TState?, Task> task, TState? state, long timeoutMs)
         => Add(new SingleFuncTimerTask<TState>(task, state, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add(Action task, TimeSpan timeout)
+    public TaskInfo Add(Action task, TimeSpan timeout)
         => Add(task, (long) timeout.TotalMilliseconds);
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add<TState>(Action<TState?> task, TState? state, TimeSpan timeout)
+    public TaskInfo Add<TState>(Action<TState?> task, TState? state, TimeSpan timeout)
         => Add(task, state, (long) timeout.TotalMilliseconds);
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add(Func<Task> task, TimeSpan timeout)
+    public TaskInfo Add(Func<Task> task, TimeSpan timeout)
         => Add(task, (long) timeout.TotalMilliseconds);
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask Add<TState>(Func<TState?, Task> task, TState? state, TimeSpan timeout)
+    public TaskInfo Add<TState>(Func<TState?, Task> task, TState? state, TimeSpan timeout)
         => Add(task, state, (long) timeout.TotalMilliseconds);
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask AddRepeat(Action<ITimerTask> task, long timeoutMs)
+    public TaskInfo AddRepeat(Action<TaskInfo> task, long timeoutMs)
         => Add(new MultiActionTimerTask(task, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask AddRepeat<TState>(Action<ITimerTask, TState?> task, TState? state, long timeoutMs)
+    public TaskInfo AddRepeat<TState>(Action<TaskInfo, TState?> task, TState? state, long timeoutMs)
         => Add(new MultiActionTimerTask<TState>(task, state, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask AddRepeat(Func<ITimerTask, Task> task, long timeoutMs)
+    public TaskInfo AddRepeat(Func<TaskInfo, Task> task, long timeoutMs)
         => Add(new MultiFuncTimerTask(task, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask AddRepeat<TState>(Func<ITimerTask, TState?, Task> task, TState? state, long timeoutMs)
+    public TaskInfo AddRepeat<TState>(Func<TaskInfo, TState?, Task> task, TState? state, long timeoutMs)
         => Add(new MultiFuncTimerTask<TState>(task, state, timeoutMs));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask AddRepeat(Action<ITimerTask> task, TimeSpan timeout)
+    public TaskInfo AddRepeat(Action<TaskInfo> task, TimeSpan timeout)
         => AddRepeat(task, (long) timeout.TotalMilliseconds);
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask AddRepeat<TState>(Action<ITimerTask, TState?> task, TState? state, TimeSpan timeout)
+    public TaskInfo AddRepeat<TState>(Action<TaskInfo, TState?> task, TState? state, TimeSpan timeout)
         => AddRepeat(task, state, (long) timeout.TotalMilliseconds);
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask AddRepeat(Func<ITimerTask, Task> task, TimeSpan timeout)
+    public TaskInfo AddRepeat(Func<TaskInfo, Task> task, TimeSpan timeout)
         => AddRepeat(task, (long) timeout.TotalMilliseconds);
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
-    public ITimerTask AddRepeat<TState>(Func<ITimerTask, TState?, Task> task, TState? state, TimeSpan timeout)
+    public TaskInfo AddRepeat<TState>(Func<TaskInfo, TState?, Task> task, TState? state, TimeSpan timeout)
         => AddRepeat(task, state, (long) timeout.TotalMilliseconds);
 
     #endregion
