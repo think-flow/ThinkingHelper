@@ -168,7 +168,7 @@ public class TaskTimerTest
             {
                 timer.Add(static obj =>
                 {
-                    (int time, int num, var collection) = ((int, int, ConcurrentBag<(int, int, DateTimeOffset)>)) obj!;
+                    (int time, int num, var collection) = obj;
                     collection.Add((time, num, DateTimeOffset.Now));
                 }, (i, j, collection), TimeSpan.FromSeconds(1 + i));
             }

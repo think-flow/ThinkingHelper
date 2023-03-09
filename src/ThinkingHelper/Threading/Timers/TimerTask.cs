@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 
 namespace ThinkingHelper.Threading.Timers;
 
+/// <summary>
+/// 代表需要定时执行的任务行为
+/// </summary>
 public interface ITimerTask
 {
     /// <summary>
@@ -24,10 +27,16 @@ internal abstract class TimerTask : ITimerTask
 {
     private TimerTaskEntry? _timerTaskEntry;
 
-    protected TimerTask(long delayMs)
+    protected TimerTask(long delayMs, bool repeat)
     {
         DelayMs = delayMs;
+        Repeat = repeat;
     }
+
+    /// <summary>
+    /// 是否重复执行
+    /// </summary>
+    public bool Repeat { get; }
 
     /// <inheritdoc />
     public long DelayMs { get; }
@@ -58,72 +67,130 @@ internal abstract class TimerTask : ITimerTask
     }
 }
 
-internal class ActionTimerTask : TimerTask
+internal abstract class SyncTimerTask : TimerTask
 {
-    public ActionTimerTask(Action task, long delayMs)
-        : base(delayMs)
-    {
-        Delegate = task;
-    }
-
-    public ActionTimerTask(Action task, TimeSpan delay)
-        : this(task, (long) delay.TotalMilliseconds)
+    protected SyncTimerTask(long delayMs, bool repeat)
+        : base(delayMs, repeat)
     {
     }
 
-    public Action Delegate { get; }
+    public void Execute(object? obj) => ExecuteCore((SyncTimerTask) obj!);
+
+    protected abstract void ExecuteCore(SyncTimerTask task);
 }
 
-internal class ActionTimerTaskWithState : TimerTask
+internal abstract class AsyncTimerTask : TimerTask
 {
-    public ActionTimerTaskWithState(Action<object?> task, object? state, long delayMs)
-        : base(delayMs)
-    {
-        Delegate = task;
-        State = state;
-    }
-
-    public ActionTimerTaskWithState(Action<object?> task, object? state, TimeSpan delay)
-        : this(task, state, (long) delay.TotalMilliseconds)
+    protected AsyncTimerTask(long delayMs, bool repeat)
+        : base(delayMs, repeat)
     {
     }
 
-    public Action<object?> Delegate { get; }
+    public Task ExecuteAsync(object? obj) => ExecuteCore((AsyncTimerTask) obj!);
 
-    public object? State { get; }
+    protected abstract Task ExecuteCore(AsyncTimerTask task);
 }
 
-internal class FuncAsyncTimerTask : TimerTask
+internal class SingleActionTimerTask : SyncTimerTask
 {
-    public FuncAsyncTimerTask(Func<Task> task, long delayMs)
-        : base(delayMs)
+    private readonly Action _delegate;
+
+    public SingleActionTimerTask(Action task, long delayMs) : base(delayMs, false)
     {
-        Delegate = task;
+        _delegate = task;
     }
 
-    public FuncAsyncTimerTask(Func<Task> task, TimeSpan delay)
-        : this(task, (long) delay.TotalMilliseconds)
-    {
-    }
-
-    public Func<Task> Delegate { get; }
+    protected override void ExecuteCore(SyncTimerTask task) => _delegate.Invoke();
 }
 
-internal class FuncAsyncTimerTaskWithState : TimerTask
+internal class SingleActionTimerTask<TState> : SyncTimerTask
 {
-    public FuncAsyncTimerTaskWithState(Func<object?, Task> task, object? state, long delayMs)
-        : base(delayMs)
+    private readonly Action<TState?> _delegate;
+    private readonly TState? _state;
+
+    public SingleActionTimerTask(Action<TState?> task, TState? state, long delayMs) : base(delayMs, false)
     {
-        Delegate = task;
-        State = state;
+        _delegate = task;
+        _state = state;
     }
 
-    public FuncAsyncTimerTaskWithState(Func<object?, Task> task, object? state, TimeSpan delay)
-        : this(task, state, (long) delay.TotalMilliseconds)
+    protected override void ExecuteCore(SyncTimerTask task) => _delegate.Invoke(_state);
+}
+
+internal class SingleFuncTimerTask : AsyncTimerTask
+{
+    private readonly Func<Task> _delegate;
+
+    public SingleFuncTimerTask(Func<Task> task, long delayMs) : base(delayMs, false)
     {
+        _delegate = task;
     }
 
-    public Func<object?, Task> Delegate { get; }
+    protected override Task ExecuteCore(AsyncTimerTask task) => _delegate.Invoke();
+}
 
-    public object? State { get; }
+internal class SingleFuncTimerTask<TState> : AsyncTimerTask
+{
+    private readonly Func<TState?, Task> _delegate;
+    private readonly TState? _state;
+
+    public SingleFuncTimerTask(Func<TState?, Task> task, TState? state, long delayMs) : base(delayMs, false)
+    {
+        _delegate = task;
+        _state = state;
+    }
+
+    protected override Task ExecuteCore(AsyncTimerTask task) => _delegate.Invoke(_state);
+}
+
+internal class MultiActionTimerTask : SyncTimerTask
+{
+    private readonly Action<ITimerTask> _delegate;
+
+    public MultiActionTimerTask(Action<ITimerTask> task, long delayMs) : base(delayMs, true)
+    {
+        _delegate = task;
+    }
+
+    protected override void ExecuteCore(SyncTimerTask task) => _delegate.Invoke(task);
+}
+
+internal class MultiActionTimerTask<TState> : SyncTimerTask
+{
+    private readonly Action<ITimerTask, TState?> _delegate;
+    private readonly TState? _state;
+
+    public MultiActionTimerTask(Action<ITimerTask, TState?> task, TState? state, long delayMs) : base(delayMs, true)
+    {
+        _delegate = task;
+        _state = state;
+    }
+
+    protected override void ExecuteCore(SyncTimerTask task) => _delegate.Invoke(task, _state);
+}
+
+internal class MultiFuncTimerTask : AsyncTimerTask
+{
+    private readonly Func<ITimerTask, Task> _delegate;
+
+    public MultiFuncTimerTask(Func<ITimerTask, Task> task, long delayMs) : base(delayMs, true)
+    {
+        _delegate = task;
+    }
+
+    protected override Task ExecuteCore(AsyncTimerTask task) => _delegate.Invoke(task);
+}
+
+internal class MultiFuncTimerTask<TState> : AsyncTimerTask
+{
+    private readonly Func<ITimerTask, TState?, Task> _delegate;
+    private readonly TState? _state;
+
+    public MultiFuncTimerTask(Func<ITimerTask, TState?, Task> task, TState? state, long delayMs) : base(delayMs, true)
+    {
+        _delegate = task;
+        _state = state;
+    }
+
+    protected override Task ExecuteCore(AsyncTimerTask task) => _delegate.Invoke(task, _state);
 }
