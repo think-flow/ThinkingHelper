@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using ThinkingHelper.Collections.Generic;
 
+// ReSharper disable MemberCanBePrivate.Global
+
 namespace ThinkingHelper.Threading.Timers;
 
 /// <summary>
@@ -200,6 +202,8 @@ public sealed class TaskTimer : IDisposable
         if (_disposed) throw new ObjectDisposedException(GetType().Name);
     }
 
+    private static long TimeSpanToMilliseconds(TimeSpan timeout) => timeout.TotalMilliseconds <= long.MaxValue ? (long) timeout.TotalMilliseconds : long.MaxValue;
+
     #region 添加任务
 
     /// <summary>
@@ -230,25 +234,25 @@ public sealed class TaskTimer : IDisposable
     /// 添加定时任务
     /// </summary>
     public TaskInfo Add(Action task, TimeSpan timeout)
-        => Add(task, (long) timeout.TotalMilliseconds);
+        => Add(task, TimeSpanToMilliseconds(timeout));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
     public TaskInfo Add<TState>(Action<TState?> task, TState? state, TimeSpan timeout)
-        => Add(task, state, (long) timeout.TotalMilliseconds);
+        => Add(task, state, TimeSpanToMilliseconds(timeout));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
     public TaskInfo Add(Func<Task> task, TimeSpan timeout)
-        => Add(task, (long) timeout.TotalMilliseconds);
+        => Add(task, TimeSpanToMilliseconds(timeout));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
     public TaskInfo Add<TState>(Func<TState?, Task> task, TState? state, TimeSpan timeout)
-        => Add(task, state, (long) timeout.TotalMilliseconds);
+        => Add(task, state, TimeSpanToMilliseconds(timeout));
 
     /// <summary>
     /// 添加定时任务
@@ -278,25 +282,25 @@ public sealed class TaskTimer : IDisposable
     /// 添加定时任务
     /// </summary>
     public TaskInfo AddRepeat(Action<TaskInfo> task, TimeSpan timeout)
-        => AddRepeat(task, (long) timeout.TotalMilliseconds);
+        => AddRepeat(task, TimeSpanToMilliseconds(timeout));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
     public TaskInfo AddRepeat<TState>(Action<TaskInfo, TState?> task, TState? state, TimeSpan timeout)
-        => AddRepeat(task, state, (long) timeout.TotalMilliseconds);
+        => AddRepeat(task, state, TimeSpanToMilliseconds(timeout));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
     public TaskInfo AddRepeat(Func<TaskInfo, Task> task, TimeSpan timeout)
-        => AddRepeat(task, (long) timeout.TotalMilliseconds);
+        => AddRepeat(task, TimeSpanToMilliseconds(timeout));
 
     /// <summary>
     /// 添加定时任务
     /// </summary>
     public TaskInfo AddRepeat<TState>(Func<TaskInfo, TState?, Task> task, TState? state, TimeSpan timeout)
-        => AddRepeat(task, state, (long) timeout.TotalMilliseconds);
+        => AddRepeat(task, state, TimeSpanToMilliseconds(timeout));
 
     #endregion
 }
